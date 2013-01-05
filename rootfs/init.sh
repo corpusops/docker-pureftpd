@@ -146,7 +146,7 @@ $FTP_USER_PASS" > "$PWD_FILE"
     fi
 
     addmode=add
-    if ( pure-pw list |awk '{print $1}' |egrep -q "^${FTP_USER_NAME}$" );then
+    if ( pure-pw list |awk '{print $1}' |grep -E -q "^${FTP_USER_NAME}$" );then
         addmode=mod
     fi
 
@@ -222,7 +222,7 @@ export \
     TLS_ORG \
     PASSWD_FILE
 
-if ( echo "$@" | egrep -q "bash$|debug|shell" );then
+if ( echo "$@" | grep -E -q "bash$|debug|shell" );then
     exec bash
 else
     exec /bin/supervisord.sh
