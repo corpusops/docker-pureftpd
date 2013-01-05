@@ -10,7 +10,7 @@ RUN apt-get update -yqq && apt install -y software-properties-common
 RUN add-apt-repository -y ppa:corpusops/pure-ftpd \
     && sed -i -re "s/# (deb-src .*$(lsb_release -sc) )/\1/g" /etc/apt/sources.list \
     && echo "deb-src http://ppa.launchpad.net/corpusops/pure-ftpd/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list \
-    && egrep ^deb-src /etc/apt/sources.list /etc/apt/sources.list.d/* \
+    && grep -E ^deb-src /etc/apt/sources.list /etc/apt/sources.list.d/* \
     && apt-get -y update \
     && apt-get -y --force-yes --fix-missing install dpkg-dev debhelper \
     && apt-get -y build-dep pure-ftpd
