@@ -1,0 +1,73 @@
+# Python
+*.pyc
+__pycache__
+*.egg-info
+*.mo
+
+# GRAPHHOPPER local settings
+/src/project/settings/local.py
+
+# Docker local settings
+/.env
+/docker.env
+/netrc
+
+# IDE settings
+.vscode
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+.~lock*
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# compiled output
+/dist
+/tmp
+/angular/**/*.js
+/angular/**/*.json
+!/angular/**/tsconfig.*.json
+/angular/**/*.map
+
+# dependencies
+/node_modules
+
+# Virtualenv
+/venv/
+/.tox
+
+# corpusops & ansible
+*.retry
+/.ansible/scripts/ansible_deploy_env
+.ansible/inventory
+/local/
+!/local/regen.sh
+
+
+
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage/*
+/libpeerconnection.log
+npm-debug.log
+testem.log
+yarn-error.log
+/typings
+*~
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+#System Files
+.DS_Store
+
+
+/.ansible/inventory\.*

@@ -1,0 +1,47 @@
+---
+services: [docker]
+language: python
+git: {lfs_skip_smudge: true}
+env:
+  global:
+  - 'RELEASE_DEBUG=""'
+  - 'NBPARALLEL="2"'
+  - 'DO_RELEASE="1"'
+  - 'RELEASABLE_REPOS="corpusops/"'
+  - 'COPS_URL="https://github.com/corpusops/corpusops.bootstrap"'
+  - 'COPS_ROOT="$TRAVIS_BUILD_DIR/local/corpusops.bootstrap"'
+  - 'funcs="$COPS_ROOT/bin/cops_shell_common"'
+  - 'silent="$funcs output_in_error silent_vv"'
+  - 'apply_role="sudo -E $silent $COPS_ROOT/bin/cops_apply_role -vvvvv"'
+  - 'install="sudo -E $silent $COPS_ROOT/bin/install.sh"'
+  - 'sync_code="$install -C --synchronize-code --skip-sync-core"'
+  - 'release="$COPS_ROOT/hacking/docker_release"'
+  - 'silent_rm="$silent rm -rf"'
+  matrix:
+  - IMAGES="corpusops/pureftpd:latest
+            corpusops/pureftpd:mysql
+            corpusops/pureftpd:postgresql
+            corpusops/pureftpd:ldap"
+  - IMAGES="corpusops/pureftpd:hardened
+            corpusops/pureftpd:hardened-mysql
+            corpusops/pureftpd:hardened-postgresql
+            corpusops/pureftpd:hardened-ldap"
+cache: {directories: ["$HOME/.cache/pip", "$COPS_ROOT"]}
+before_install:
+- sudo apt-get update -qq
+- sudo apt-get install -qq -y --force-yes parallel
+#- sudo service docker stop
+- .ansible/scripts/download_corpusops.sh
+- .ansible/scripts/setup_corpusops.sh
+# - sh -c "$apply_role */*/roles/corpusops.roles/services_virt_docker/role.yml"
+# - i=$(whoami) && sudo chown -Rf $i $COPS_ROOT
+script:
+- |-
+  cd "$TRAVIS_BUILD_DIR" && for i in $IMAGES;do \
+    flavor=$(echo $i|awk -F: '{print $2}'); \
+    echo "Building pureftpd docker image: $flavor">&2; \
+    docker build -t $i -f Dockerfile . --build-arg flavor=$flavor; \
+    done
+after_success:
+- local/corpusops.bootstrap/hacking/docker_release
+
