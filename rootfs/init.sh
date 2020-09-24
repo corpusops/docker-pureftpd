@@ -34,8 +34,17 @@ if [ ! -e /etc/pure-ftpd/pureftpd.passwd ];then
     ln -s $PASSWD_FILE /etc/pure-ftpd/pureftpd.passwd
 fi
 
+set -x
+NO_PASSIVE_MODE="${NO_PASSIVE_MODE-}"
+CONFIG_PUBLIC_HOST=""
+if [[ -z "$NO_PASSIVE_MODE" ]] && [[ -z "$PUBLICHOST" ]];then
+    PUBLICHOST=$(ip r get 1|head -n1|awk -F src '{print $2}'|awk '{print $1}')
+fi
+if [[ -n "$PUBLICHOST" ]];then
+    CONFIG_PUBLIC_HOST="-P $PUBLICHOST"
+fi
 
-DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R -P $PUBLICHOST ${ADDED_FLAGS}"
+DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R ${CONFIG_PUBLIC_HOST} ${ADDED_FLAGS}"
 if [[ -n "$TLS_MODE" ]];then DEFAULT_PURE_FTPD_FLAGS="$DEFAULT_PURE_FTPD_FLAGS --tls=${TLS_MODE}";fi
 
 if ( echo $PURE_FTPD_FLAVOR | grep -q hardened );then
@@ -46,6 +55,9 @@ ADDED_FLAGS=${ADDED_FLAGS-}
 PURE_FTPD_FLAGS=" ${@:-"${DEFAULT_PURE_FTPD_FLAGS}"} ${ADDED_FLAGS} ${PURE_FTPD_EXTRA_FLAGS} "
 SUPERVISORD_CONFIGS="${SUPERVISORD_CONFIGS-/etc/supervisor.d/pureftpd /etc/supervisor.d/cron /etc/supervisor.d/rsyslog}"
 
+if [ ! -e /etc/pure-ftpd/pureftpd.pdb ] && [ -d /etc/pure-ftpd/passwd ];then
+    ln -svf /etc/pure-ftpd/passwd/pureftpd.pdb /etc/pure-ftpd/pureftpd.pdb
+fi
 
 if [[ -z $NO_INIT ]];then
 # Load in any existing db from volume store
