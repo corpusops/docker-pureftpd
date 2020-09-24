@@ -1,5 +1,5 @@
 #Stage 1 : builder debian image
-FROM corpusops/ubuntu-bare:18.04 AS builder
+FROM corpusops/ubuntu-bare:20.04 AS builder
 
 # properly setup debian sources
 ENV DEBIAN_FRONTEND noninteractive
@@ -25,7 +25,7 @@ RUN mkdir /tmp/pure-ftpd/ \
 	&& dpkg-buildpackage -b -uc
 
 #Stage 2 : actual pure-ftpd image
-FROM corpusops/ubuntu-bare:18.04 AS image
+FROM corpusops/ubuntu-bare:20.04 AS image
 
 # feel free to change this ;)
 LABEL maintainer "kiorky <kiorky@@cryptelium.net>"
