@@ -43,7 +43,7 @@ if [[ -n "$PUBLICHOST" ]];then
     CONFIG_PUBLIC_HOST="-P $PUBLICHOST"
 fi
 
-DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R ${CONFIG_PUBLIC_HOST} ${ADDED_FLAGS}"
+DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R ${CONFIG_PUBLIC_HOST}"
 if [[ -n "$TLS_MODE" ]];then DEFAULT_PURE_FTPD_FLAGS="$DEFAULT_PURE_FTPD_FLAGS --tls=${TLS_MODE}";fi
 
 if ( echo $PURE_FTPD_FLAVOR | grep -q hardened );then
