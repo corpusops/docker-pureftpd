@@ -34,7 +34,6 @@ if [ ! -e /etc/pure-ftpd/pureftpd.passwd ];then
     ln -s $PASSWD_FILE /etc/pure-ftpd/pureftpd.passwd
 fi
 
-set -x
 NO_PASSIVE_MODE="${NO_PASSIVE_MODE-}"
 CONFIG_PUBLIC_HOST=""
 if [[ -z "$NO_PASSIVE_MODE" ]] && [[ -z "$PUBLICHOST" ]];then
