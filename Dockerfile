@@ -40,7 +40,7 @@ COPY --from=builder /tmp/pure-ftpd/*.deb /tmp/
 # install the new deb files
 RUN set -ex && apt-get -yqq update \
     && ls /tmp/pure-ftpd* \
-    && flavor=$(echo -${flavor}|sed -re "s/(latest|hardened)-?//g") \
+    && flavor=$(echo -${flavor}|sed -re "s/(-?latest|-?hardened)-?//g") \
     && echo "flavor: $flavor" >&2\
     && apt-get install --no-install-recommends --yes \
         /tmp/pure-ftpd-common*.deb \
