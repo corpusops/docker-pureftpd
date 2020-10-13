@@ -1,0 +1,14 @@
+/var/log/pure-ftpd/*.log
+{
+        daily
+        missingok
+        copytruncate
+        delaycompress
+        rotate {{ .Env.FTPD_ROTATE_DAYS | default "365" }}
+        compress
+        notifempty
+        postrotate
+                /usr/bin/pkill -SIGHUP -f pure-ftpd
+        endscript
+
+}

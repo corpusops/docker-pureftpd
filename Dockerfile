@@ -54,12 +54,6 @@ RUN apt-mark hold pure-ftpd pure-ftpd-common
 RUN groupadd ftpgroup \
 	&& useradd -g ftpgroup -d /home/ftpusers -s /dev/null ftpuser
 
-# configure rsyslog logging
-RUN echo "" >> /etc/rsyslog.conf \
-	&& echo "#PureFTP Custom Logging" >> /etc/rsyslog.conf \
-	&& echo "ftp.* /var/log/pure-ftpd/pureftpd.log" >> /etc/rsyslog.conf \
-	&& echo "Updated /etc/rsyslog.conf with /var/log/pure-ftpd/pureftpd.log"
-
 ADD rootfs/ /
 
 # default publichost, you'll need to set this for passive support

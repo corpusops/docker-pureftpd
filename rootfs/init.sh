@@ -7,6 +7,12 @@ join_by() { local IFS="$1"; shift; echo "$*"; }
 log() { echo "$@" >&2; }
 vv() { log "$@"; "$@"; }
 
+
+for c in /etc/logrotate.d/pure-ftpd-common;do
+    log "Patching /etc/logrotate.d/pure-ftpd-common"
+    frep /conf$c:$c --overwrite
+done
+
 PURE_FTPD_FLAVOR=${PURE_FTPD_FLAVOR-}
 
 TLS_CN=${TLS_CN:-$(hostname -f)}
