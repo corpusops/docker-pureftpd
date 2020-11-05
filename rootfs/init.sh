@@ -20,6 +20,8 @@ TLS_ORG=${TLS_ORG:-acme}
 TLS_C=${TLS_C:-FR}
 TLS_MODE=${TLS_MODE-1}
 
+PUBLICHOST=${PUBLICHOST-}
+NO_CHMOD=${NO_CHMOD-}
 FTP_MAX_CLIENTS=${FTP_MAX_CLIENTS:-5}
 FTP_MAX_CONNECTIONS=${FTP_MAX_CONNECTIONS:-5}
 
@@ -49,13 +51,16 @@ if [[ -n "$PUBLICHOST" ]];then
     CONFIG_PUBLIC_HOST="-P $PUBLICHOST"
 fi
 
-DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R ${CONFIG_PUBLIC_HOST}"
+DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j ${CONFIG_PUBLIC_HOST}"
 if [[ -n "$TLS_MODE" ]];then DEFAULT_PURE_FTPD_FLAGS="$DEFAULT_PURE_FTPD_FLAGS --tls=${TLS_MODE}";fi
 
 if ( echo $PURE_FTPD_FLAVOR | grep -q hardened );then
 	DEFAULT_PURE_FTPD_FLAGS="$DEFAULT_PURE_FTPD_FLAGS -s -A -j -Z -H -4 -E -R -G -X -x"
 fi
-PURE_FTPD_EXTRA_FLAGS=" ${PUREFTPD_EXTRA_FLAGS-} "
+if [[ -n $NO_CHMOD ]];then
+    PURE_FTPD_FLAGS="$PURE_FTPD_FLAGS -R"
+fi
+PURE_FTPD_EXTRA_FLAGS=" ${PURE_FTPD_EXTRA_FLAGS-} "
 ADDED_FLAGS=${ADDED_FLAGS-}
 PURE_FTPD_FLAGS=" ${@:-"${DEFAULT_PURE_FTPD_FLAGS}"} ${ADDED_FLAGS} ${PURE_FTPD_EXTRA_FLAGS} "
 SUPERVISORD_CONFIGS="${SUPERVISORD_CONFIGS-/etc/supervisor.d/pureftpd /etc/supervisor.d/cron /etc/supervisor.d/rsyslog}"
@@ -159,7 +164,7 @@ $FTP_USER_PASS" > "$PWD_FILE"
 fi
 
 # Set passive port range in pure-ftpd options if not already existent
-if [[ $PURE_FTPD_FLAGS != *" -p "* ]];then
+if [[ $PURE_FTPD_FLAGS != *" -p "* ]] && [[ -z "$NO_PASSIVE_MODE" ]];then
     log "Setting default port range to: $FTP_PASSIVE_PORTS"
     PURE_FTPD_FLAGS="$PURE_FTPD_FLAGS -p $FTP_PASSIVE_PORTS"
 fi
