@@ -1,0 +1,83 @@
+on:
+  workflow_dispatch:
+    inputs:
+      RUNTESTS: {description: 'Run tests', required: false}
+  push:
+  pull_request:
+  schedule: [{cron: '1 0 1,15 * *'}]
+env:
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+  BUILDKIT_PROGRESS: "plain"
+  NO_SQUASH: ""
+  NONINTERACTIVE: "1"
+  FORCE_ONLINE: "1"
+  COMPOSE_FILE: "docker-compose.yml:docker-compose-dev.yml"
+  MAIN_BRANCH: master
+  RELEASABLE_REPOS: "^corpusops/"
+  RELEASABLE_BRANCHES: "^refs/tags|^(refs/heads/)?(main|master|workflows)$"
+  IMG: "corpusops/pureftpd"
+  RUNTESTS: ${{ github.event.inputs.RUNTESTS || '1' }}
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env: {knob: "${{matrix.knob}}", flavors: "${{matrix.flavors}}"}
+    steps:
+    - uses: actions/checkout@v2
+      with: {submodules: recursive}
+    - name: Set vars
+      run: |-
+          if ( echo "$GITHUB_REF" | egrep -q "${RELEASABLE_BRANCHES}" ) \
+          && ( echo "$GITHUB_REPOSITORY" | egrep -q "${RELEASABLE_REPOS}" )
+          then releasable=true;else releasable=false;fi
+          echo "::set-output name=releasable::$releasable"
+      id: v
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    - name: Activate docker experimental
+      run: |-
+        sudo bash -exc "service docker stop;python -c \
+        \"d='/etc/docker/daemon.json';\
+        import json;c=json.load(open(d));c['experimental']=True;\
+        open(d, 'w').write(json.dumps(c))\"
+        systemctl restart docker"
+    - name: Setup env
+      run:  |-
+        set -e
+        for i in .env;do if [ -e $i.test ];then cp -v $i.test $i;fi;done
+        printf "USER_UID=$(id -u)\nUSER_GID=$(id -g)\n">>.env
+    - name: Build dependant docker images if any
+      run: |-
+        set -e
+        vv() { echo "$@">&2;"$@"; }
+        for flavor in $flavors;do
+          flavor=$(echo $knob-$flavor|sed -re "s/hardened-latest/hardened/g" -e "s/^-//g");
+          ( sed -i "/flavor=/ d" .env || true );echo "flavor=$flavor">>.env
+          if ( docker-compose config|egrep -q build:; );then
+            vv docker-compose build --build-arg flavor=$flavor
+          fi
+        done
+    - name: Release docker image
+      run:  |-
+        set -ex
+        vv() { echo "$@">&2;"$@"; }
+        docker images|grep "${IMG}"
+        for flavor in $flavors;do
+          flavor=$(echo $knob-$flavor|sed -re "s/hardened-latest/hardened/g" -e "s/^-//g");
+          ( sed -i "/flavor=/ d" .env || true );echo "flavor=$flavor">>.env
+        if [ "x${{steps.v.outputs.releasable}}" = "xtrue" ];then
+          if ( echo "$GITHUB_REF" | egrep -q "$RELEASABLE_BRANCHES" );then
+            vv docker push ${IMG}:$flavor
+          fi
+        fi
+        done
+    strategy:
+      max-parallel: 5
+      fail-fast: false
+      matrix:
+        knob: [hardened, ""]
+        flavors: ["latest mysql postgresql ldap"]
+
