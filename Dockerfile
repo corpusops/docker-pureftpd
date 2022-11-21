@@ -12,17 +12,17 @@ RUN add-apt-repository -y ppa:corpusops/pure-ftpd \
     && echo "deb-src http://ppa.launchpad.net/corpusops/pure-ftpd/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list \
     && egrep ^deb-src /etc/apt/sources.list /etc/apt/sources.list.d/* \
     && apt-get -y update \
-	&& apt-get -y --force-yes --fix-missing install dpkg-dev debhelper \
-	&& apt-get -y build-dep pure-ftpd
+    && apt-get -y --force-yes --fix-missing install dpkg-dev debhelper \
+    && apt-get -y build-dep pure-ftpd
 
 
 # Build from source - we need to remove the need for CAP_SYS_NICE and CAP_DAC_READ_SEARCH
 RUN mkdir /tmp/pure-ftpd/ \
-	&& cd /tmp/pure-ftpd/ \
-	&& apt-get source pure-ftpd \
-	&& cd pure-ftpd-* \
-	&& sed -i '/CAP_SYS_NICE,/d; /CAP_DAC_READ_SEARCH/d; s/CAP_SYS_CHROOT,/CAP_SYS_CHROOT/;' src/caps_p.h \
-	&& dpkg-buildpackage -b -uc
+    && cd /tmp/pure-ftpd/ \
+    && apt-get source pure-ftpd \
+    && cd pure-ftpd-* \
+    && sed -i '/CAP_SYS_NICE,/d; /CAP_DAC_READ_SEARCH/d; s/CAP_SYS_CHROOT,/CAP_SYS_CHROOT/;' src/caps_p.h \
+    && dpkg-buildpackage -b -uc
 
 #Stage 2 : actual pure-ftpd image
 FROM corpusops/ubuntu-bare:20.04 AS image
@@ -45,14 +45,15 @@ RUN set -ex && apt-get -yqq update \
     && apt-get install --no-install-recommends --yes \
         /tmp/pure-ftpd-common*.deb \
         /tmp/pure-ftpd${flavor}_*.deb \
-	&& rm -Rf /tmp/pure-ftpd*
+    && apt-get clean all && apt-get autoclean && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /tmp/pure-ftpd*
 
 # Prevent pure-ftpd upgrading
 RUN apt-mark hold pure-ftpd pure-ftpd-common
 
 # setup ftpgroup and ftpuser
 RUN groupadd ftpgroup \
-	&& useradd -g ftpgroup -d /home/ftpusers -s /dev/null ftpuser
+    && useradd -g ftpgroup -d /home/ftpusers -s /dev/null ftpuser
 
 ADD rootfs/ /
 

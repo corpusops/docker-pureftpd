@@ -142,6 +142,11 @@ $FTP_USER_PASS" > "$PWD_FILE"
     pure-pw user${addmode} "$FTP_USER_NAME" -f "$PASSWD_FILE" \
         -m -d "$FTP_USER_HOME" $PURE_PW_ADD_FLAGS < "$PWD_FILE"
 
+    if [ "x${addmode}" = "xmod" ];then
+        ( echo "$FTP_USER_PASS";echo "$FTP_USER_PASS" )| pure-pw passwd $FTP_USER_NAME -f "$PASSWD_FILE"
+        pure-pw mkdb /etc/pure-ftpd/pureftpd.pdb -f "$PASSWD_FILE"
+    fi
+
     if [ ! -z "$FTP_USER_HOME_PERMISSION" ];then
         chmod "$FTP_USER_HOME_PERMISSION" "$FTP_USER_HOME"
         log " root user give $FTP_USER_NAME ftp user at $FTP_USER_HOME directory has $FTP_USER_HOME_PERMISSION permission"
