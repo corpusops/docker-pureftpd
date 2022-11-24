@@ -31,10 +31,13 @@ FROM corpusops/ubuntu-bare:20.04 AS image
 LABEL maintainer "kiorky <kiorky@@cryptelium.net>"
 
 # install dependencies
-ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -y update
 ARG flavor=
-ENV PURE_FTPD_FLAVOR=$flavor
+# default publichost, you'll need to set this for passive support
+ENV \
+    PURE_FTPD_FLAVOR="$flavor" \
+    DEBIAN_FRONTEND="noninteractive" \
+    PUBLICHOST="localhost"
 
 COPY --from=builder /tmp/pure-ftpd/*.deb /tmp/
 # install the new deb files
@@ -45,20 +48,12 @@ RUN set -ex && apt-get -yqq update \
     && apt-get install --no-install-recommends --yes \
         /tmp/pure-ftpd-common*.deb \
         /tmp/pure-ftpd${flavor}_*.deb \
+    && apt-mark hold pure-ftpd pure-ftpd-common \
     && apt-get clean all && apt-get autoclean && rm -rf /var/lib/apt/lists/* \
     && rm -Rf /tmp/pure-ftpd*
 
-# Prevent pure-ftpd upgrading
-RUN apt-mark hold pure-ftpd pure-ftpd-common
-
-# setup ftpgroup and ftpuser
 RUN groupadd ftpgroup \
     && useradd -g ftpgroup -d /home/ftpusers -s /dev/null ftpuser
-
 ADD rootfs/ /
-
-# default publichost, you'll need to set this for passive support
-ENV PUBLICHOST localhost
-
 # startup
 ENTRYPOINT ["/init.sh"]
