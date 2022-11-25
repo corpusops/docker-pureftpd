@@ -3,7 +3,7 @@ Docker Pure-ftpd Server
 
 https://hub.docker.com/r/corpusops/pureftpd/
 
-![Build Status](https://travis-ci.org/corpusops/setups.docker-pureftpd.svg?branch=master)
+[![.github/workflows/cicd.yml](https://github.com/corpusops/docker-pureftpd/workflows/.github/workflows/cicd.yml/badge.svg?branch=master)](https://github.com/corpusops/docker-pureftpd/actions?query=workflow%3A.github%2Fworkflows%2Fcicd.yml+branch%3Amaster)
 
 ----------------------------------------
 
