@@ -13,6 +13,7 @@ for c in /etc/logrotate.d/pure-ftpd-common;do
     frep /conf$c:$c --overwrite
 done
 
+SUPERVISORD_CONFIGS="${SUPERVISORD_CONFIGS-pureftpd cron rsyslog}"
 PURE_FTPD_FLAVOR=${PURE_FTPD_FLAVOR-}
 
 TLS_CN=${TLS_CN:-$(hostname -f)}
@@ -40,7 +41,7 @@ NO_INIT=${NO_INIT-}
 
 PASSWD_FILE="${PASSWD_FILE:-/etc/pure-ftpd/passwd/pureftpd.passwd}"
 if [ ! -e /etc/pure-ftpd/pureftpd.passwd ];then
-    ln -s $PASSWD_FILE /etc/pure-ftpd/pureftpd.passwd
+    ln -sfv "$PASSWD_FILE" /etc/pure-ftpd/pureftpd.passwd
 fi
 
 NO_PASSIVE_MODE="${NO_PASSIVE_MODE-}"
@@ -52,7 +53,19 @@ if [[ -n "$PUBLICHOST" ]];then
     CONFIG_PUBLIC_HOST="-P $PUBLICHOST"
 fi
 
-DEFAULT_PURE_FTPD_FLAGS="-l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j ${CONFIG_PUBLIC_HOST}"
+PERSISTENT_PURE_FTPD_DB=${PERSISTENT_PURE_FTPD_DB:-/etc/pure-ftpd/passwd/pureftpd.pdb}
+DEFAULT_PURE_FTPD_DB=${DEFAULT_PURE_FTPD_DB:-/etc/pure-ftpd/pureftpd.pdb}
+PURE_FTPD_DB=${PURE_FTPD_DB:-${DEFAULT_PURE_FTPD_DB}}
+if [ ! -e "${PURE_FTPD_DB}" ];then
+    PURE_FTPD_DB="${PERSISTENT_PURE_FTPD_DB}"
+fi
+PURE_FTPD_DB_DIR=$(dirname ${PURE_FTPD_DB})
+# ENV vars for pure-pw defaults settings
+export PURE_PASSWDFILE="${PASSWD_FILE}"
+export PURE_DBFILE="${PURE_FTPD_DB}"
+
+PURE_FTPD_EXTRA_FLAGS=" ${PURE_FTPD_EXTRA_FLAGS-} "
+DEFAULT_PURE_FTPD_FLAGS="-l puredb:${PURE_DBFILE} -E -j ${CONFIG_PUBLIC_HOST}"
 if [[ -n "$TLS_MODE" ]];then DEFAULT_PURE_FTPD_FLAGS="$DEFAULT_PURE_FTPD_FLAGS --tls=${TLS_MODE}";fi
 
 if ( echo $PURE_FTPD_FLAVOR | grep -q hardened );then
@@ -61,19 +74,17 @@ fi
 if [[ -n $NO_CHMOD ]];then
     PURE_FTPD_FLAGS="$PURE_FTPD_FLAGS -R"
 fi
-PURE_FTPD_EXTRA_FLAGS=" ${PURE_FTPD_EXTRA_FLAGS-} "
 ADDED_FLAGS=${ADDED_FLAGS-}
 PURE_FTPD_FLAGS=" ${@:-"${DEFAULT_PURE_FTPD_FLAGS}"} ${ADDED_FLAGS} ${PURE_FTPD_EXTRA_FLAGS} "
-SUPERVISORD_CONFIGS="${SUPERVISORD_CONFIGS-/etc/supervisor.d/pureftpd /etc/supervisor.d/cron /etc/supervisor.d/rsyslog}"
 
-if [ ! -e /etc/pure-ftpd/pureftpd.pdb ] && [ -d /etc/pure-ftpd/passwd ];then
-    ln -svf /etc/pure-ftpd/passwd/pureftpd.pdb /etc/pure-ftpd/pureftpd.pdb
-fi
 
 if [[ -z $NO_INIT ]];then
+
+if [ ! -e $PURE_FTPD_DB_DIR ]; then mkdir $PURE_FTPD_DB_DIR;fi
+
 # Load in any existing db from volume store
-if [ -e /etc/pure-ftpd/passwd/pureftpd.passwd ];then
-    pure-pw mkdb /etc/pure-ftpd/pureftpd.pdb -f "$PASSWD_FILE"
+if [ -e "$PASSWD_FILE" ];then
+    pure-pw mkdb
 fi
 
 # detect if using TLS (from file in volume) but no flag set, set one
@@ -139,12 +150,12 @@ $FTP_USER_PASS" > "$PWD_FILE"
         addmode=mod
     fi
 
-    pure-pw user${addmode} "$FTP_USER_NAME" -f "$PASSWD_FILE" \
+    pure-pw user${addmode} "$FTP_USER_NAME" \
         -m -d "$FTP_USER_HOME" $PURE_PW_ADD_FLAGS < "$PWD_FILE"
 
     if [ "x${addmode}" = "xmod" ];then
-        ( echo "$FTP_USER_PASS";echo "$FTP_USER_PASS" )| pure-pw passwd $FTP_USER_NAME -f "$PASSWD_FILE"
-        pure-pw mkdb /etc/pure-ftpd/pureftpd.pdb -f "$PASSWD_FILE"
+        ( echo "$FTP_USER_PASS";echo "$FTP_USER_PASS" )| pure-pw passwd $FTP_USER_NAME
+        pure-pw mkdb
     fi
 
     if [ ! -z "$FTP_USER_HOME_PERMISSION" ];then
@@ -211,8 +222,9 @@ export \
     TLS_ORG \
     PASSWD_FILE
 
-if ( echo "$@" | egrep -q "bash|debug|shell" );then
+if ( echo "$@" | egrep -q "bash$|debug|shell" );then
     exec bash
 else
     exec /bin/supervisord.sh
 fi
+# vim:set et sts=4 ts=4 tw=0:
