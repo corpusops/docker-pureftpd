@@ -146,7 +146,7 @@ $FTP_USER_PASS" > "$PWD_FILE"
     fi
 
     addmode=add
-    if ( pure-pw list |awk '{print $1}' |grep -E -q "^${FTP_USER_NAME}$" );then
+    if ( pure-pw list >/dev/null 2>&1 ) && ( pure-pw list |awk '{print $1}' |grep -E -q "^${FTP_USER_NAME}$" );then
         addmode=mod
     fi
 
