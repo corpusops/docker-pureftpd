@@ -1,0 +1,18 @@
+[program:ftpaltlogger]
+command = sh -c '\
+if [ -e "$PURE_FTPD_ALT_LOG" ];then while true;do tail -f "$PURE_FTPD_ALT_LOG";done; \
+else while true;do sleep 55555;done;fi'
+autostart = true
+autorestart = true
+killasgroup = true
+stopasgroup = true
+directory = /
+stopsignal = KILL
+stopwaitsecs = 3
+stdout_logfile = /dev/stdout
+stderr_logfile = /dev/stderr
+stdout_logfile_maxbytes = 0
+stderr_logfile_maxbytes = 0
+stdout_logfile_backups = 0
+stderr_logfile_backups = 0
+
