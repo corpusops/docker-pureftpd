@@ -78,6 +78,22 @@ ADDED_FLAGS=${ADDED_FLAGS-}
 PURE_FTPD_FLAGS=" ${@:-"${DEFAULT_PURE_FTPD_FLAGS}"} ${ADDED_FLAGS} ${PURE_FTPD_EXTRA_FLAGS} "
 
 
+# if flags handle themselves logging, do not output anything
+# else output everything to stdout (it's docker role to handle logs)
+# 1: It's the rsyslog companion process that will send out daemon messages
+# 2: in/out connections are logged to a file which is tailed out to stdout (etc/supervisor.d/ftpaltlogger)
+PURE_FTPD_LOG="/var/log/pure-ftpd/pureftpd.log"
+PURE_FTPD_ALT_LOG=""
+if (echo $PURE_FTPD_FLAGS | grep -vq " -O");then
+    SUPERVISORD_CONFIGS="${SUPERVISORD_CONFIGS} ftpaltlogger"
+    PURE_FTPD_ALT_LOG="${PURE_FTPD_ALT_LOG:-/var/log/pure-ftpd/transfer.log}"
+    PURE_FTPD_LOG_FACILITY="${PURE_FTPD_LOG_FACILITY:-w3c}"
+    PURE_FTPD_FLAGS="$PURE_FTPD_FLAGS -O ${PURE_FTPD_LOG_FACILITY}:${PURE_FTPD_ALT_LOG}"
+fi
+for i in $PURE_FTPD_ALT_LOG $PURE_FTPD_LOG;do if [[ -n "$i" ]];then
+    if [ ! -e "$(dirname $i)" ];then mkdir -pv "$(dirname $i)";fi && touch "$i"
+fi;done
+
 if [[ -z $NO_INIT ]];then
 
 if [ ! -e $PURE_FTPD_DB_DIR ]; then mkdir $PURE_FTPD_DB_DIR;fi
@@ -214,6 +230,8 @@ export \
     FTP_USER_NAME \
     FTP_USER_PASS \
     FTP_USER_UID \
+    PURE_FTPD_LOG \
+    PURE_FTPD_ALT_LOG \
     PURE_FTPD_FLAGS \
     PURE_FTPD_FLAVOR \
     SUPERVISORD_CONFIGS \
