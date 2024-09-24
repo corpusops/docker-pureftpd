@@ -170,7 +170,7 @@ $FTP_USER_PASS" > "$PWD_FILE"
         -m -d "$FTP_USER_HOME" $PURE_PW_ADD_FLAGS < "$PWD_FILE"
 
     if [ "x${addmode}" = "xmod" ];then
-        ( echo "$FTP_USER_PASS";echo "$FTP_USER_PASS" )| pure-pw passwd $FTP_USER_NAME
+        ( while true;do echo "$FTP_USER_PASS";sleep 0.5;done )| pure-pw passwd $FTP_USER_NAME
         pure-pw mkdb
     fi
 
