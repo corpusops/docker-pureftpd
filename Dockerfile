@@ -1,12 +1,13 @@
 #Stage 1 : builder debian image
-FROM corpusops/ubuntu-bare:20.04 AS builder
+ARG BASE=corpusops/ubuntu-bare:22.04
+FROM $BASE AS builder
 
 # properly setup debian sources
 ENV DEBIAN_FRONTEND noninteractive
 
 # install package building helpers
 # rsyslog for logging (ref https://github.com/stilliard/docker-pure-ftpd/issues/17)
-RUN apt-get update -yqq && apt install -y software-properties-common
+RUN apt-get update -yqq && apt install -y software-properties-common gpg gpg-agent
 RUN add-apt-repository -y ppa:corpusops/pure-ftpd \
     && sed -i -re "s/# (deb-src .*$(lsb_release -sc) )/\1/g" /etc/apt/sources.list \
     && echo "deb-src http://ppa.launchpad.net/corpusops/pure-ftpd/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list \
@@ -25,7 +26,7 @@ RUN mkdir /tmp/pure-ftpd/ \
     && dpkg-buildpackage -b -uc
 
 #Stage 2 : actual pure-ftpd image
-FROM corpusops/ubuntu-bare:20.04 AS image
+FROM $BASE AS image
 
 # feel free to change this ;)
 LABEL maintainer "kiorky <kiorky@@cryptelium.net>"
