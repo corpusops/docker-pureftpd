@@ -56,8 +56,8 @@ jobs:
         for flavor in $flavors;do
           flavor=$(echo $knob-$flavor|sed -re "s/hardened-latest/hardened/g" -e "s/^-//g");
           ( sed -i "/flavor=/ d" .env || true );echo "flavor=$flavor">>.env
-          if ( docker-compose config|egrep -q build:; );then
-            vv docker-compose build --build-arg flavor=$flavor
+          if ( docker compose config|egrep -q build:; );then
+            vv docker compose build --build-arg flavor=$flavor
           fi
         done
     - name: Release docker image
