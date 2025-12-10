@@ -39,7 +39,7 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
     - name: Activate docker experimental
       run: |-
-        sudo bash -exc "service docker stop;python -c \
+        sudo bash -exc "if [ ! -e /etc/docker/daemon.json ];then mkdir /etc/docker||true;echo '{}' > /etc/docker/daemon.json;fi;service docker stop;python -c \
         \"d='/etc/docker/daemon.json';\
         import json;c=json.load(open(d));c['experimental']=True;\
         open(d, 'w').write(json.dumps(c))\"
